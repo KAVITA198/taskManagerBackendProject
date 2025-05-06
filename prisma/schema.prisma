@@ -1,0 +1,57 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+
+model User {
+  id            Int      @id @default(autoincrement())
+  email         String   @unique
+  password      String
+  refresh_token String?
+  status        Boolean  @default(false)
+  name          String
+  created_at    DateTime @default(now())
+  tasks_created  Task[]   @relation("Creator")
+  tasks_assigned Task[]   @relation("Assignee")
+  notifications Notification[]
+}
+
+model Notification {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  task_id    Int?     // Optional reference to a Task
+  message    String
+  read       Boolean  @default(false)
+  created_at DateTime @default(now())
+
+  user       User     @relation(fields: [user_id], references: [id])
+  task       Task?    @relation(fields: [task_id], references: [id])
+}
+
+model Task {
+  id           Int      @id @default(autoincrement())
+  title        String   @db.LongText
+  description  String   @db.LongText
+  due_date      DateTime
+  priority     String
+  status       String
+  created_by_id  Int
+  assigned_by_id Int
+  created_by    User     @relation("Creator", fields: [created_by_id], references: [id])
+  assigned_to   User     @relation("Assignee", fields: [assigned_by_id], references: [id])
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  notifications Notification[]
+}
